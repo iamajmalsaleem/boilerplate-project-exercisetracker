@@ -21,16 +21,16 @@ mongoose.connect(mySecret, { useNewUrlParser: true, useUnifiedTopology: true });
 let { Schema } = mongoose
 
 let addSchema = new Schema({
-  description:{ type: String, required: true },
-  duration:{ type: Number, required: true },
-  date : String
+  description: { type: String, required: true },
+  duration: { type: Number, required: true },
+  date: String
 })
 
 let userSchema = new Schema({
   username: { type: String, required: true },
   log: [addSchema],
   count: Number
- 
+
 })
 
 let addModel = mongoose.model('add', addSchema)
@@ -59,87 +59,87 @@ app.post("/api/users", bodyParser.urlencoded({ extended: false }), (req, respons
 
 app.get("/api/users", (req, response) => {
   userModel.find({})
-  .select("_id")
-  .select('username')
-  .exec((err,res)=>{
-    if(!err && res!=undefined){
-      response.json(res)
-    }
-  })
+    .select("_id")
+    .select('username')
+    .exec((err, res) => {
+      if (!err && res != undefined) {
+        response.json(res)
+      }
+    })
 })
 
 //POST exercise
 
-app.post("/api/users/:id/exercises", bodyParser.urlencoded({ extended: false }), (req, response) =>{
+app.post("/api/users/:id/exercises", bodyParser.urlencoded({ extended: false }), (req, response) => {
 
-       if(!req.body.duration) response.json({error:"duration is must"})
-      else if(!req.body.description) response.json({error:"description is must"})
-else{
-let newEx = new addModel({
-  description: req.body.description,
-  duration: parseInt(req.body.duration),
-  date: req.body.date
-})  
+  if (!req.body.duration) response.json({ error: "duration is must" })
+  else if (!req.body.description) response.json({ error: "description is must" })
+  else {
+    let newEx = new addModel({
+      description: req.body.description,
+      duration: parseInt(req.body.duration),
+      date: req.body.date
+    })
 
-if(newEx.date==""){
-  newEx.date=new Date().toISOString().substring(0, 10)
-}
-
-userModel.findByIdAndUpdate(
-  req.body._id,
-  {$push:{log:newEx}},
-  {new:true},
-  (err,data)=>{
-    if(!err && data!=undefined){
-      let dataObj={}
-      dataObj['username']=data.username
-      dataObj['description']=newEx.description   
-      dataObj['duration']=newEx.duration
-      dataObj['date']=new Date(newEx.date).toDateString()
-      dataObj['_id']=data._id
-     
-      response.json(dataObj)
+    if (newEx.date == "") {
+      newEx.date = new Date().toISOString().substring(0, 10)
     }
-    else response.json({data:"not found"})
-  })
-     }
+
+    userModel.findByIdAndUpdate(
+      req.body._id,
+      { $push: { log: newEx } },
+      { new: true },
+      (err, data) => {
+        if (!err && data != undefined) {
+          let dataObj = {}
+          dataObj['username'] = data.username
+          dataObj['description'] = newEx.description
+          dataObj['duration'] = newEx.duration
+          dataObj['date'] = new Date(newEx.date).toDateString()
+          dataObj['_id'] = data._id
+
+          response.json(dataObj)
+        }
+        else response.json({ data: "not found" })
+      })
+  }
 })
 
 //GET full log
 
-app.get("/api/users/:id/logs",(req,response)=>{
-let inputId = req.params.id
+app.get("/api/users/:id/logs", (req, response) => {
+  let inputId = req.params.id
 
-userModel.findOne({ _id: inputId })
-.select("_id").select('username').select("count").select('log')
-.exec((err,res)=>{
-  if(!err && res!=undefined){
+  userModel.findOne({ _id: inputId })
+    .select("_id").select('username').select("count").select('log')
+    .exec((err, res) => {
+      if (!err && res != undefined) {
 
-     if(req.query.from || req.query.to){
-let fromDate = new Date(0)
-let toDate = new Date
-if(req.query.from){
-  fromDate=new Date(req.query.from)
-}
-if(req.query.to){
-  toDate=new Date(req.query.to)
-}
-fromDate = fromDate.getTime()
-toDate = toDate.getTime()
+        if (req.query.from || req.query.to) {
+          let fromDate = new Date(0)
+          let toDate = new Date
+          if (req.query.from) {
+            fromDate = new Date(req.query.from)
+          }
+          if (req.query.to) {
+            toDate = new Date(req.query.to)
+          }
+          fromDate = fromDate.getTime()
+          toDate = toDate.getTime()
 
-res.log = res.log.filter((item)=>{
-  let itemUnix = new Date(item.date).getTime()
-  return (itemUnix >= fromDate && itemUnix <= toDate)
-})
-}
+          res.log = res.log.filter((item) => {
+            let itemUnix = new Date(item.date).getTime()
+            return (itemUnix >= fromDate && itemUnix <= toDate)
+          })
+        }
 
-if(req.query.limit){
-  res.log = res.log.slice(0,req.query.limit)
-}
+        if (req.query.limit) {
+          res.log = res.log.slice(0, req.query.limit)
+        }
 
-    res['count']=res.log.length
-    response.json(res)
-  } else {response.json({error:"NOT FOUND"})}
-})
+        res['count'] = res.log.length
+        response.json(res)
+      } else { response.json({ error: "NOT FOUND" }) }
+    })
 
 })
