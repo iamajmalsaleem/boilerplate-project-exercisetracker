@@ -29,6 +29,8 @@ let addSchema = new Schema({
 let userSchema = new Schema({
   username: { type: String, required: true },
   log: [addSchema]
+  //, count: Number
+ 
 })
 
 let addModel = mongoose.model('add', addSchema)
@@ -90,16 +92,33 @@ userModel.findByIdAndUpdate(
   (err,data)=>{
     if(!err && data!=undefined){
       let dataObj={}
-      dataObj['_id']=data._id
       dataObj['username']=data.username
-      dataObj['date']=new Date(newEx.date).toDateString()
-      dataObj['duration']=newEx.duration
       dataObj['description']=newEx.description   
-
-
+      dataObj['duration']=newEx.duration
+      dataObj['date']=new Date(newEx.date).toDateString()
+      dataObj['_id']=data._id
+     
       response.json(dataObj)
     }
     else response.json({data:"not found"})
   })
      }
+})
+
+//GET full log
+
+app.get("/api/users/:id/logs",(req,response)=>{
+let inputId = req.params.id
+userModel.findOne({ _id: inputId })
+.select("_id")
+.select('username')
+.select("count")
+.select('log')
+.exec((err,res)=>{
+  if(!err && res!=undefined){
+    res = res.toJSON()
+    res['count']=res.log.length
+    response.json(res)
+  } else {response.json({error:"NOT FOUND"})}
+})
 })
