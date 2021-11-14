@@ -28,8 +28,8 @@ let addSchema = new Schema({
 
 let userSchema = new Schema({
   username: { type: String, required: true },
-  log: [addSchema]
-  //, count: Number
+  log: [addSchema],
+  count: Number
  
 })
 
@@ -109,16 +109,37 @@ userModel.findByIdAndUpdate(
 
 app.get("/api/users/:id/logs",(req,response)=>{
 let inputId = req.params.id
+
 userModel.findOne({ _id: inputId })
-.select("_id")
-.select('username')
-.select("count")
-.select('log')
+.select("_id").select('username').select("count").select('log')
 .exec((err,res)=>{
   if(!err && res!=undefined){
-    res = res.toJSON()
+
+     if(req.query.from || req.query.to){
+let fromDate = new Date(0)
+let toDate = new Date
+if(req.query.from){
+  fromDate=new Date(req.query.from)
+}
+if(req.query.to){
+  toDate=new Date(req.query.to)
+}
+fromDate = fromDate.getTime()
+toDate = toDate.getTime()
+
+res.log = res.log.filter((item)=>{
+  let itemUnix = new Date(item.date).getTime()
+  return (itemUnix >= fromDate && itemUnix <= toDate)
+})
+}
+
+if(req.query.limit){
+  res.log = res.log.slice(0,req.query.limit)
+}
+
     res['count']=res.log.length
     response.json(res)
   } else {response.json({error:"NOT FOUND"})}
 })
+
 })
